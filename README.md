@@ -19,7 +19,7 @@
 ## 独自HUDのプレビュー方法
 
 `device-adapters.js` の該当デバイスの `packet(state)` を編集すると、HUD表示と packet JSON が同時に変わります。
-TailSight 本体 ([tailsight](https://github.com/)) と同じ共通I/F（`caps` / `photoActor` / `packet()`）なので、そのまま本システムへ持ち込み可能です。
+TailSight 本体 ([toriumib/tailsight](https://github.com/toriumib/tailsight)) と同じ共通I/F（`caps` / `photoActor` / `packet()`）なので、そのまま本システムへ持ち込み可能です。
 
 ## ファイル
 
