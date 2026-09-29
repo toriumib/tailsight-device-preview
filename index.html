@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TailSight Device Preview — Rokid / Even Realities G2 装着視界シミュレータ</title>
+<style>
+  :root { --bg:#0b0f14; --panel:#11161d; --line:#232c38; --green:#3f6; --green-dim:#295c3f; --cyan:#39d0ff; --red:#ff5f6d; --text:#d7dee8; --muted:#7b8794; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN",sans-serif; font-size:14px; }
+  .hidden { display:none !important; }
+  header { display:flex; align-items:center; gap:14px; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header .logo { font-weight:700; letter-spacing:1px; }
+  header .logo span { color:var(--green); }
+  header .spacer { flex:1; }
+  header .note { color:var(--muted); font-size:12px; }
+  main { display:grid; grid-template-columns:1fr 380px; gap:12px; padding:12px; height:calc(100vh - 56px); }
+  #eyeWrap { position:relative; background:#000; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  #eyeWrap::after { content:""; position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 180px rgba(0,0,0,.85); }
+  #eyeCanvas { width:100%; height:100%; display:block; cursor:grab; }
+  #eyeCanvas:active { cursor:grabbing; }
+  .eyehud { position:absolute; pointer-events:none; color:var(--green); font-family:"SF Mono",Menlo,monospace; text-shadow:0 0 10px rgba(51,255,153,.75); }
+  .eyehud.g2 { top:13%; left:50%; transform:translateX(-50%); width:44%; text-align:center; font-size:15px; line-height:1.9; letter-spacing:1px; }
+  .eyehud.rokid { top:58%; left:55%; transform:translate(-50%,-50%); border:1px solid rgba(63,246,102,.45); background:rgba(2,10,4,.35); border-radius:12px; padding:12px 16px; min-width:250px; }
+  .eyeTop { position:absolute; top:12px; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:0 16px; color:var(--muted); font-size:13px; }
+  .eyeDev { background:rgba(16,51,28,.8); color:var(--green); border-radius:10px; padding:2px 12px; font-size:12px; cursor:pointer; }
+  .eyeHint { position:absolute; bottom:12px; left:0; right:0; text-align:center; color:var(--muted); font-size:12px; pointer-events:none; }
+  aside { display:flex; flex-direction:column; gap:12px; overflow-y:auto; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .card h3 { font-size:13px; color:var(--muted); font-weight:600; margin-bottom:8px; letter-spacing:.5px; }
+  label.ctl { display:block; margin-bottom:10px; font-size:12px; color:var(--muted); }
+  label.ctl .val { color:var(--cyan); font-family:monospace; float:right; }
+  input[type=range] { width:100%; accent-color:var(--cyan); }
+  select, input[type=text] { width:100%; background:#161d26; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:7px 8px; font-size:13px; margin-top:4px; }
+  .packet { font-size:10px; line-height:1.5; color:#2e8b57; opacity:.85; white-space:pre-wrap; overflow-x:auto; background:#04120a; border:1px solid var(--green-dim); border-radius:6px; padding:8px; margin-top:8px; font-family:monospace; }
+  footer { padding:8px 16px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; background:var(--panel); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TailSight <span>Device Preview</span></div>
+  <div class="spacer"></div>
+  <div class="note">Rokid Glasses / Even Realities G2 — 装着視界HUDシミュレータ (スタンドアロン)</div>
+</header>
+
+<main>
+  <div id="eyeWrap">
+    <canvas id="eyeCanvas"></canvas>
+    <div id="eyeHudG2" class="eyehud g2 hidden"></div>
+    <div id="eyeHudRokid" class="eyehud rokid hidden"></div>
+    <div class="eyeTop">
+      <span class="eyeDev" id="eyeDevLabel" title="クリックでデバイス切替">Rokid Glasses</span>
+      <span id="eyeMode">PREVIEW</span>
+    </div>
+    <div class="eyeHint">ドラッグ=首を振る · ダブルクリック=対象を正面に · 右パネルで状態を変更</div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h3>デバイス</h3>
+      <select id="selDevice">
+        <option value="rokid" selected>Rokid Glasses（カメラ内蔵）</option>
+        <option value="evenG2">Even Realities G2（カメラなし）</option>
+      </select>
+    </div>
+    <div class="card">
+      <h3>シミュレーション状態</h3>
+      <label class="ctl">対象までの距離 <span class="val" id="vDist">120 m</span>
+        <input type="range" id="ctlDist" min="5" max="600" value="120"></label>
+      <label class="ctl">対象の方位 <span class="val" id="vBrg">北東 45°</span>
+        <input type="range" id="ctlBrg" min="0" max="359" value="45"></label>
+      <label class="ctl">対象の状態
+        <select id="ctlState"><option selected>移動中</option><option>停止</option></select></label>
+      <label class="ctl">予測テキスト（任意）
+        <input type="text" id="ctlPred" value="歌舞伎町一番街 78%"></label>
+    </div>
+    <div class="card">
+      <h3>送信パケット (packet)</h3>
+      <pre class="packet" id="packetPre"></pre>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  TailSight Device Preview — 実機がなくても Rokid / Even G2 のHUD見え方を確認するためのツール。
+  device-adapters.js の packet() を書き換えれば任意のHUDをプレビューできます。MIT License。
+</footer>
+
+<script src="device-adapters.js"></script>
+<script src="preview.js"></script>
+</body>
+</html>
